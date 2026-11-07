@@ -1,0 +1,24 @@
+# Variables de entorno y datos personales
+.env
+.env.*
+!.env.example
+
+# Facturas XML con datos personales y fiscales
+input/*.xml
+input/*.XML
+input/*.pdf
+input/*.PDF
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Sistema y editores
+.DS_Store
+.vscode/
+.idea/
+*.log
