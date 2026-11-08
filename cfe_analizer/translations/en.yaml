@@ -1,0 +1,10 @@
+configuration:
+  api_token:
+    name: "API Authorization Token"
+    description: "Secret token to authorize automated invoice ingestion via Google Apps Script (Bearer header)."
+  dac_limite_anual_kwh:
+    name: "Annual DAC Tariff Limit (kWh)"
+    description: "12-month rolling energy consumption threshold before high-consumption tariff triggers (default 3,000 kWh)."
+  input_dir:
+    name: "XML Storage Directory"
+    description: "Persistent storage path where CFE XML files are saved (default /share/cfe_analizer/input)."

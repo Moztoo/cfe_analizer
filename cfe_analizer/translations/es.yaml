@@ -1,0 +1,10 @@
+configuration:
+  api_token:
+    name: "Token de Autorización API"
+    description: "Clave secreta para autorizar la recepción de facturas por webhook desde Google Apps Script (cabecera Bearer)."
+  dac_limite_anual_kwh:
+    name: "Límite Anual Tarifa DAC (kWh)"
+    description: "Límite acumulado de consumo en 12 meses antes de entrar a tarifa de alto consumo (por defecto 3,000 kWh)."
+  input_dir:
+    name: "Directorio de Facturas XML"
+    description: "Ruta física en disco donde se guardan permanentemente los XMLs (por defecto /share/cfe_analizer/input)."
