@@ -1,6 +1,6 @@
 name: "CFE Analizer"
 description: "Dashboard de facturas y análisis de consumo eléctrico de CFE con Ingress"
-version: "1.0.0"
+version: "1.1.0"
 slug: "cfe_analizer"
 url: "https://github.com/Moztoo/cfe_analizer"
 init: false
