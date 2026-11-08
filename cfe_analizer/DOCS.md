@@ -2,6 +2,8 @@
 
 Dashboard web interactivo y seguro para auditar, visualizar y analizar el consumo eléctrico bimestral a partir de las facturas XML (CFDI 4.0) emitidas por **CFE Suministrador de Servicios Básicos**.
 
+![CFE Analizer Dashboard](https://raw.githubusercontent.com/Moztoo/cfe_analizer/master/docs/screenshot_dashboard.jpg)
+
 ---
 
 ## 🌟 Características

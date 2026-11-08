@@ -4,6 +4,10 @@
 
 Dashboard web interactivo y **Add-on oficial para Home Assistant OS** diseñado para auditar, visualizar y analizar el consumo eléctrico bimestral a partir de las facturas XML (CFDI 4.0) emitidas por **CFE Suministrador de Servicios Básicos**.
 
+<p align="center">
+  <img src="docs/screenshot_dashboard.jpg" alt="CFE Analizer Dashboard" width="850">
+</p>
+
 ---
 
 ## 🌟 Características Principales
