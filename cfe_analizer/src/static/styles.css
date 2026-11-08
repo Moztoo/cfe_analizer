@@ -47,6 +47,10 @@
   background: transparent;
 }
 
+html {
+  font-size: 17.5px;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
   background-color: var(--bg);
@@ -57,7 +61,7 @@ body {
 }
 
 .app-shell {
-  max-width: 1380px;
+  max-width: 1480px;
   margin: 0 auto;
   padding: 0 1.5rem 2.5rem;
 }
@@ -79,27 +83,27 @@ body {
 }
 
 .logo-sq {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-sm);
   background: var(--surface-alt);
   border: 1px solid var(--border-strong);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
 }
 
 .logo-sq.lg {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border-radius: var(--radius);
-  font-size: 1.35rem;
+  font-size: 1.5rem;
 }
 
 .app-title {
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   letter-spacing: -0.01em;
 }
 
@@ -108,11 +112,11 @@ body {
 }
 
 .meta-pill {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
   background: var(--surface);
   border: 1px solid var(--border);
-  padding: 0.2rem 0.6rem;
+  padding: 0.25rem 0.65rem;
   border-radius: var(--radius-sm);
 }
 
@@ -134,8 +138,8 @@ body {
   background: transparent;
   border: 1px solid transparent;
   color: var(--text-secondary);
-  padding: 0.48rem 0.9rem;
-  font-size: 0.82rem;
+  padding: 0.52rem 0.95rem;
+  font-size: 0.88rem;
   font-weight: 500;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -157,7 +161,7 @@ body {
 
 .tab-kbd {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   padding: 0.08rem 0.35rem;
   border-radius: 4px;
   background: var(--bg);
@@ -189,8 +193,8 @@ body {
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  padding: 0.34rem 0.7rem;
-  font-size: 0.76rem;
+  padding: 0.38rem 0.75rem;
+  font-size: 0.82rem;
   font-weight: 500;
   border-radius: 6px;
   cursor: pointer;
@@ -211,10 +215,10 @@ body {
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.42rem 0.85rem;
+  gap: 0.45rem;
+  padding: 0.46rem 0.95rem;
   border-radius: var(--radius-sm);
-  font-size: 0.8rem;
+  font-size: 0.84rem;
   font-weight: 500;
   cursor: pointer;
   border: 1px solid var(--border);
@@ -299,26 +303,26 @@ body {
 }
 
 .kpi-label {
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
   font-weight: 500;
 }
 
 .kpi-value {
-  font-size: 1.65rem;
+  font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.15;
 }
 
 .kpi-value small {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 500;
   color: var(--text-secondary);
 }
 
 .kpi-foot {
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
@@ -331,9 +335,9 @@ body {
 
 /* Tags */
 .tag {
-  font-size: 0.7rem;
+  font-size: 0.74rem;
   font-weight: 600;
-  padding: 0.15rem 0.5rem;
+  padding: 0.18rem 0.55rem;
   border-radius: 6px;
   background: var(--surface-alt);
   color: var(--text-secondary);
@@ -360,7 +364,7 @@ body {
 
 .mono-tag {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.73rem;
+  font-size: 0.76rem;
   padding: 0.2rem 0.5rem;
   border-radius: 6px;
   background: var(--bg);
@@ -374,7 +378,7 @@ body {
 
 .progress-track {
   width: 100%;
-  height: 5px;
+  height: 6px;
   background: var(--bg);
   border-radius: 99px;
   overflow: hidden;
@@ -412,31 +416,31 @@ body {
 
 .eyebrow {
   display: block;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);
-  margin-bottom: 0.15rem;
+  margin-bottom: 0.18rem;
 }
 
 .panel-header h2 {
-  font-size: 1rem;
+  font-size: 1.08rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
 .panel-sub {
-  font-size: 0.77rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
-  margin-top: 0.15rem;
+  margin-top: 0.18rem;
 }
 
 .chart-legend {
   display: flex;
-  gap: 1rem;
-  font-size: 0.75rem;
+  gap: 1.1rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
-  margin-bottom: 0.65rem;
+  margin-bottom: 0.75rem;
   flex-wrap: wrap;
 }
 
@@ -465,7 +469,7 @@ body {
 
 .chart-stage {
   width: 100%;
-  height: 320px;
+  height: 350px;
   position: relative;
 }
 
@@ -613,9 +617,9 @@ input[type="range"] {
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--text-secondary);
-  padding: 0.32rem 0.65rem;
+  padding: 0.36rem 0.72rem;
   border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.12s;
 }
@@ -641,10 +645,10 @@ input[type="range"] {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 0.85rem;
+  padding: 0.95rem;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.25rem;
 }
 
 .mini-sq.active-border {
@@ -652,30 +656,30 @@ input[type="range"] {
 }
 
 .mini-label {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   color: var(--text-secondary);
 }
 
 .mini-val {
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 700;
 }
 
 .mini-val small {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 500;
   color: var(--text-secondary);
 }
 
 .mini-val-sm {
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   font-weight: 600;
   color: var(--text);
   word-break: break-word;
 }
 
 .mini-sub {
-  font-size: 0.73rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
 }
 
@@ -692,13 +696,13 @@ input[type="range"] {
 }
 
 .exc-big {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 700;
 }
 
 .exc-arrow {
   color: var(--text-muted);
-  font-size: 1.2rem;
+  font-size: 1.25rem;
 }
 
 /* Tables */
@@ -716,9 +720,9 @@ input[type="range"] {
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 0.38rem 0.7rem;
+  padding: 0.44rem 0.75rem;
   border-radius: var(--radius-sm);
-  font-size: 0.8rem;
+  font-size: 0.84rem;
   outline: none;
 }
 
@@ -727,7 +731,7 @@ input[type="range"] {
 }
 
 .search-input {
-  min-width: 220px;
+  min-width: 240px;
 }
 
 .table-wrap {
@@ -738,19 +742,19 @@ input[type="range"] {
 .clean-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
 .clean-table th,
 .clean-table td {
-  padding: 0.6rem 0.65rem;
+  padding: 0.7rem 0.75rem;
   text-align: left;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 
 .clean-table th {
-  font-size: 0.69rem;
+  font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
@@ -765,7 +769,7 @@ input[type="range"] {
 }
 
 .cell-sub {
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
   line-height: 1.25;
   margin-top: 0.12rem;
