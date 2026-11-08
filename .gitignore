@@ -4,10 +4,12 @@
 !.env.example
 
 # Facturas XML con datos personales y fiscales
-input/*.xml
-input/*.XML
-input/*.pdf
-input/*.PDF
+*.xml
+*.XML
+*.pdf
+*.PDF
+!input/.gitkeep
+!cfe_analizer/input/.gitkeep
 
 # Python
 __pycache__/
