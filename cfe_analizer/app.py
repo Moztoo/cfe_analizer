@@ -76,9 +76,45 @@ class CFEDashboardHandler(SimpleHTTPRequestHandler):
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-API-Key")
+        self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
+
+    def do_OPTIONS(self):
+        """Manejo de CORS preflight."""
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-API-Key")
+        self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+        self.end_headers()
+
+    def _verify_api_auth(self) -> bool:
+        """Valida el token Bearer o API Key si está configurado en el servidor."""
+        env_vars = load_env(ENV_PATH)
+        configured_token = (
+            os.environ.get("CFE_API_TOKEN") or env_vars.get("CFE_API_TOKEN", "")
+        ).strip()
+
+        # Si el servidor no tiene token configurado, no bloquea pero avisa en consola
+        if not configured_token:
+            print("[CFE-Dashboard] Advertencia: CFE_API_TOKEN no configurado; petición aceptada sin autenticación.")
+            return True
+
+        auth_header = self.headers.get("Authorization", "").strip()
+        x_api_key = self.headers.get("X-API-Key", "").strip()
+
+        provided_token = ""
+        if auth_header.startswith("Bearer "):
+            provided_token = auth_header[7:].strip()
+        elif auth_header:
+            provided_token = auth_header
+        elif x_api_key:
+            provided_token = x_api_key
+
+        return provided_token == configured_token
 
     def do_GET(self):
         parsed_url = urlparse(self.path)
@@ -191,13 +227,125 @@ class CFEDashboardHandler(SimpleHTTPRequestHandler):
             self.path = "/index.html"
         return super().do_GET()
 
-    def do_POST(self):
-        parsed_url = urlparse(self.path)
-        req_path = parsed_url.path.rstrip("/")
-        if req_path != "/api/upload":
-            self._send_json(404, {"error": "Ruta no encontrada"})
+    def _handle_api_v1_facturas_cfe(self):
+        """Maneja el endpoint POST /api/v1/facturas/cfe para Google Apps Script según contrato."""
+        # 1. Validar autenticación
+        if not self._verify_api_auth():
+            self._send_json(401, {
+                "status": "error",
+                "message": "API Key o Token inválido o no proporcionado"
+            })
             return
 
+        # 2. Leer y parsear body JSON
+        try:
+            content_length = int(self.headers.get("Content-Length", "0"))
+            if content_length <= 0 or content_length > 10 * 1024 * 1024:
+                self._send_json(400, {
+                    "status": "error",
+                    "message": "Payload JSON inválido o faltan campos obligatorios (fileName, xmlContent)"
+                })
+                return
+            raw_body = self.rfile.read(content_length).decode("utf-8")
+            payload = json.loads(raw_body)
+        except Exception:
+            self._send_json(400, {
+                "status": "error",
+                "message": "Payload JSON inválido o faltan campos obligatorios (fileName, xmlContent)"
+            })
+            return
+
+        if not isinstance(payload, dict):
+            self._send_json(400, {
+                "status": "error",
+                "message": "Payload JSON inválido o faltan campos obligatorios (fileName, xmlContent)"
+            })
+            return
+
+        file_name = payload.get("fileName")
+        xml_content = payload.get("xmlContent")
+
+        if (
+            not file_name
+            or not isinstance(file_name, str)
+            or not xml_content
+            or not isinstance(xml_content, str)
+            or not xml_content.strip()
+        ):
+            self._send_json(400, {
+                "status": "error",
+                "message": "Payload JSON inválido o faltan campos obligatorios (fileName, xmlContent)"
+            })
+            return
+
+        # 3. Parsear XML y validar estructura CFE
+        try:
+            root = ET.fromstring(xml_content.encode("utf-8"))
+        except Exception:
+            self._send_json(400, {
+                "status": "error",
+                "message": "El contenido proporcionado no es un XML válido"
+            })
+            return
+
+        serie = root.attrib.get("Serie", "").strip()
+        folio = root.attrib.get("Folio", "").strip()
+        tipo = root.attrib.get("TipoDeComprobante", "").strip()
+
+        if not serie or not folio or tipo not in ("I", "P"):
+            self._send_json(400, {
+                "status": "error",
+                "message": "El comprobante no corresponde a un CFDI válido de CFE (Serie, Folio o TipoDeComprobante faltante)"
+            })
+            return
+
+        input_dir = get_input_dir()
+        existing_data = load_all_cfe_data(input_dir=input_dir, env_path=ENV_PATH)
+        existing_keys = {inv["key"] for inv in existing_data["invoices"]} | {
+            pay["key"] for pay in existing_data["payments"]
+        }
+
+        key = f"{serie}-{folio}"
+        safe_filename = re.sub(r"[^A-Za-z0-9._-]", "_", f"{serie}-{folio}.xml")
+        dest_path = os.path.join(input_dir, safe_filename)
+
+        # Si ya existe, responder de forma exitosa e idempotente sin duplicar
+        if key in existing_keys and os.path.isfile(dest_path):
+            self._send_json(200, {
+                "status": "success",
+                "message": f"XML ya procesado previamente ({key})",
+                "data": {
+                    "filename": safe_filename,
+                    "processedAt": datetime.now().isoformat()
+                }
+            })
+            return
+
+        # Guardar en almacenamiento seguro
+        with open(dest_path, "w", encoding="utf-8") as f_out:
+            f_out.write(xml_content)
+
+        # Validar que cfe_parser lo pueda leer correctamente
+        parsed_check = parse_xml_file(dest_path)
+        if not parsed_check:
+            os.remove(dest_path)
+            self._send_json(400, {
+                "status": "error",
+                "message": "El XML no contiene una estructura reconocida de CFE"
+            })
+            return
+
+        self._send_json(200, {
+            "status": "success",
+            "message": "XML procesado correctamente",
+            "data": {
+                "filename": safe_filename,
+                "processedAt": datetime.now().isoformat()
+            }
+        })
+
+    def _handle_web_upload(self):
+        """Maneja la carga manual múltiple desde la interfaz web."""
         try:
             content_length = int(self.headers.get("Content-Length", "0"))
             raw_body = self.rfile.read(content_length).decode("utf-8")
@@ -271,6 +419,22 @@ class CFEDashboardHandler(SimpleHTTPRequestHandler):
                 "data": updated_data,
             },
         )
+
+    def do_POST(self):
+        parsed_url = urlparse(self.path)
+        req_path = parsed_url.path.rstrip("/")
+
+        # Endpoint de integración para Google Apps Script
+        if req_path in ("/api/v1/facturas/cfe", "/api/facturas/cfe"):
+            self._handle_api_v1_facturas_cfe()
+            return
+
+        # Endpoint de carga web (drag and drop)
+        if req_path == "/api/upload":
+            self._handle_web_upload()
+            return
+
+        self._send_json(404, {"error": "Ruta no encontrada"})
 
 
 def run_server():

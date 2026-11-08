@@ -42,3 +42,32 @@ En la pestaña **Configuración** del add-on puedes personalizar:
 - `cfe_direccion`: Dirección del suministro.
 - `dac_limite_anual_kwh`: Límite anual para entrar en tarifa DAC (por defecto `3000` kWh).
 - `input_dir`: Directorio persistente de almacenamiento (por defecto `/share/cfe_analizer/input`).
+- `api_token`: Token secreto para autorizar peticiones desde Google Apps Script (cabecera `Authorization: Bearer <TOKEN>`).
+
+---
+
+## 🤖 Automatización con Google Apps Script (Ingesta Automática)
+
+El add-on expone el endpoint `POST /api/v1/facturas/cfe` para recibir facturas XML en cuanto lleguen a tu correo de Gmail.
+
+### Formato de la Petición
+- **Método:** `POST`
+- **Ruta:** `/api/v1/facturas/cfe`
+- **Headers:**
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <TU_API_TOKEN>`
+- **Body JSON:**
+  ```json
+  {
+    "fileName": "Factura_CFE.xml",
+    "xmlContent": "<?xml version=\"1.0\" ...?>",
+    "sender": "cfecontigo@cfe.mx",
+    "receivedAt": "2026-11-07T18:35:00Z"
+  }
+  ```
+
+### Medidas de Seguridad Incorporadas:
+- **Autenticación Bearer Obligatoria:** Si defines `api_token`, cualquier petición sin el token correspondiente recibe `401 Unauthorized`.
+- **Desinfección de Nombres y Anti Path-Traversal:** El servidor ignora rutas relativas en `fileName` y guarda los archivos con nombre forzado por CFDI (`Serie-Folio.xml`).
+- **Validación Estricta de CFDI 4.0:** Solo se almacenan comprobantes auténticos de CFE con estructura verificada.
+- **Idempotencia:** Si Google Apps Script reintenta enviar el mismo correo, el servidor detecta el duplicado por Serie-Folio y responde `200 OK` sin duplicar archivos.

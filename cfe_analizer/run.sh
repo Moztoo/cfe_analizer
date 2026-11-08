@@ -34,6 +34,7 @@ env_lines = [
     f'CFE_DIRECCION={opts.get(\"cfe_direccion\", \"\")}',
     f'CFE_TARIFA={opts.get(\"cfe_tarifa\", \"01\")}',
     f'DAC_LIMITE_ANUAL_KWH={opts.get(\"dac_limite_anual_kwh\", 3000)}',
+    f'CFE_API_TOKEN={opts.get(\"api_token\", \"\")}',
 ]
 
 with open('/app/.env', 'w', encoding='utf-8') as f_env:

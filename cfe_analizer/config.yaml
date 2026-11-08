@@ -14,6 +14,10 @@ startup: application
 boot: auto
 ingress: true
 ingress_port: 8050
+ports:
+  8050/tcp: 8050
+ports_description:
+  8050/tcp: "Puerto HTTP para webhook / API de Google Apps Script"
 panel_icon: "mdi:lightning-bolt-circle"
 panel_title: "CFE Analizer"
 map:
@@ -21,6 +25,7 @@ map:
 options:
   input_dir: "/share/cfe_analizer/input"
   port: 8050
+  api_token: ""
   cfe_titular: ""
   cfe_rpu: ""
   cfe_rfc: ""
@@ -32,6 +37,7 @@ options:
 schema:
   input_dir: str
   port: port
+  api_token: password?
   cfe_titular: str?
   cfe_rpu: str?
   cfe_rfc: str?
