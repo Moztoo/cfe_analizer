@@ -447,14 +447,27 @@
       .map(
         (y) => `
       <tr>
-        <td><strong>${y.anio}</strong></td>
-        <td>${y.bimestres}</td>
-        <td><strong>${fmtInt(y.kwh_total)} kWh</strong></td>
-        <td>${fmtDec(y.promedio_kwh_bim, 1)} kWh</td>
-        <td><strong>${fmtMoney(y.total_factura)}</strong></td>
-        <td>${fmtMoney(y.promedio_factura_bim)}</td>
-        <td>${fmtMoney(y.costo_kwh)}</td>
-        <td class="c-text-emerald">${y.subsidio_gub > 0 ? fmtMoney(y.subsidio_gub) : "—"}</td>
+        <td>
+          <div class="cell-main">${y.anio}</div>
+          <div class="cell-sub">${y.bimestres} bimestres</div>
+        </td>
+        <td>
+          <div class="cell-main">${fmtInt(y.kwh_total)} kWh</div>
+          <div class="cell-sub">${fmtDec(y.promedio_kwh_bim, 1)} kWh / bim</div>
+        </td>
+        <td>
+          <div class="cell-main">${fmtMoney(y.total_factura)}</div>
+          <div class="cell-sub">${fmtMoney(y.promedio_factura_bim)} / bim</div>
+        </td>
+        <td>
+          <div class="cell-main">${fmtMoney(y.costo_kwh)}</div>
+          <div class="cell-sub">por kWh</div>
+        </td>
+        <td class="c-text-emerald">
+          <div class="cell-main c-text-emerald">${
+            y.subsidio_gub > 0 ? fmtMoney(y.subsidio_gub) : "—"
+          }</div>
+        </td>
       </tr>`
       )
       .join("");
@@ -545,27 +558,44 @@
     invTbody.innerHTML = filteredInvoices
       .map((inv) => {
         const lecturas =
-          inv.lectura_actual > 0 ? `${inv.lectura_anterior} → ${inv.lectura_actual}` : "Historial";
+          inv.lectura_actual > 0
+            ? `Lec: ${inv.lectura_anterior} → ${inv.lectura_actual}`
+            : "Registro histórico";
+        const subTxt =
+          inv.subsidio_gub > 0 ? `Sub. CFE: ${fmtMoney(inv.subsidio_gub)}` : "Sin subsidio reg.";
         return `
         <tr class="clickable-row" data-key="${inv.key}" title="Clic para inspeccionar en Resumen">
-          <td><strong>${inv.periodo_label}</strong></td>
-          <td class="mono">${inv.key}</td>
-          <td>${inv.periodo_desde} – ${inv.periodo_hasta}</td>
-          <td>${inv.dias}</td>
-          <td class="mono">${lecturas}</td>
-          <td><strong>${inv.kwh_total} kWh</strong></td>
+          <td>
+            <div class="cell-main">${inv.periodo_label}</div>
+            <div class="cell-sub mono">${inv.key}</div>
+          </td>
+          <td>
+            <div class="cell-main">${inv.periodo_desde} – ${inv.periodo_hasta}</div>
+            <div class="cell-sub">${inv.dias} días · <span class="mono">${lecturas}</span></div>
+          </td>
+          <td>
+            <div class="cell-main">${inv.kwh_total} kWh</div>
+            <div class="cell-sub">${fmtDec(inv.consumo_diario, 2)} kWh/día</div>
+          </td>
           <td>
             <div class="tier-pills">
-              <span class="tp tp-b">${inv.kwh_basico}</span>
-              <span class="tp tp-i">${inv.kwh_intermedio}</span>
-              <span class="tp tp-e">${inv.kwh_excedente}</span>
+              <span class="tp tp-b" title="Básico">${inv.kwh_basico}</span>
+              <span class="tp tp-i" title="Intermedio">${inv.kwh_intermedio}</span>
+              <span class="tp tp-e" title="Excedente">${inv.kwh_excedente}</span>
             </div>
           </td>
-          <td>${fmtDec(inv.consumo_diario, 2)}</td>
-          <td>${fmtMoney(inv.subtotal_energia)}</td>
-          <td>${fmtMoney(inv.iva + inv.dap)}</td>
-          <td><strong>${fmtMoney(inv.total_factura)}</strong></td>
-          <td>${fmtMoney(inv.costo_kwh_total)}</td>
+          <td>
+            <div class="cell-main">${fmtMoney(inv.subtotal_energia)}</div>
+            <div class="cell-sub c-text-emerald">${subTxt}</div>
+          </td>
+          <td>
+            <div class="cell-main">${fmtMoney(inv.iva + inv.dap)}</div>
+            <div class="cell-sub">IVA ${fmtMoney(inv.iva)} · DAP ${fmtMoney(inv.dap)}</div>
+          </td>
+          <td>
+            <div class="cell-main">${fmtMoney(inv.total_factura)}</div>
+            <div class="cell-sub">${fmtMoney(inv.costo_kwh_total)} / kWh</div>
+          </td>
           <td><span class="tag">${inv.estado_pago}</span></td>
         </tr>`;
       })
