@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 """
-Servidor web local para el Dashboard Analizador de Facturas CFE.
+Servidor web para el Dashboard Analizador de Facturas CFE.
+Compatible con ejecución local y como Home Assistant Add-on con Ingress.
 No requiere librerías externas (usa la biblioteca estándar de Python).
 """
 
 import os
 import re
+import csv
+import io
 import json
+import glob
+import zipfile
 import xml.etree.ElementTree as ET
+from datetime import datetime
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse
 from src.cfe_parser import load_env, load_all_cfe_data, parse_xml_file
@@ -15,6 +21,18 @@ from src.cfe_parser import load_env, load_all_cfe_data, parse_xml_file
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "src", "static")
 ENV_PATH = os.path.join(BASE_DIR, ".env")
+
+
+def get_input_dir() -> str:
+    """Retorna la ruta absoluta del directorio de facturas XML."""
+    env_vars = load_env(ENV_PATH)
+    raw_dir = os.environ.get("INPUT_DIR") or env_vars.get("INPUT_DIR", "input")
+    if os.path.isabs(raw_dir):
+        input_dir = raw_dir
+    else:
+        input_dir = os.path.join(BASE_DIR, raw_dir)
+    os.makedirs(input_dir, exist_ok=True)
+    return input_dir
 
 
 class CFEDashboardHandler(SimpleHTTPRequestHandler):
@@ -38,21 +56,119 @@ class CFEDashboardHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed_url = urlparse(self.path)
-        if parsed_url.path == "/api/data":
-            env_vars = load_env(ENV_PATH)
-            input_dir = os.path.join(BASE_DIR, env_vars.get("INPUT_DIR", "input"))
-            os.makedirs(input_dir, exist_ok=True)
+        req_path = parsed_url.path.rstrip("/")
+
+        # API: Obtener todos los datos analizados
+        if req_path == "/api/data":
+            input_dir = get_input_dir()
             data = load_all_cfe_data(input_dir=input_dir, env_path=ENV_PATH)
             self._send_json(200, data)
             return
 
-        if parsed_url.path in ("/", "/index.html"):
+        # API: Descargar todas las facturas XML en un archivo ZIP
+        if req_path in ("/api/download/invoices.zip", "/api/download/all"):
+            input_dir = get_input_dir()
+            xml_files = sorted(
+                glob.glob(os.path.join(input_dir, "*.xml"))
+                + glob.glob(os.path.join(input_dir, "*.XML"))
+            )
+
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+                if not xml_files:
+                    zf.writestr(
+                        "LEEME.txt",
+                        "No se encontraron facturas XML en el directorio de almacenamiento.\n"
+                    )
+                else:
+                    for fpath in xml_files:
+                        arcname = os.path.basename(fpath)
+                        zf.write(fpath, arcname=arcname)
+
+            zip_bytes = zip_buffer.getvalue()
+            filename = f"facturas_cfe_{datetime.now().strftime('%Y%m%d')}.zip"
+
+            self.send_response(200)
+            self.send_header("Content-Type", "application/zip")
+            self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+            self.send_header("Content-Length", str(len(zip_bytes)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(zip_bytes)
+            return
+
+        # API: Exportar resumen de facturas en formato CSV
+        if req_path == "/api/download/summary.csv":
+            input_dir = get_input_dir()
+            data = load_all_cfe_data(input_dir=input_dir, env_path=ENV_PATH)
+            invoices = data.get("invoices", [])
+
+            csv_buffer = io.StringIO()
+            writer = csv.writer(csv_buffer)
+            writer.writerow([
+                "Folio",
+                "Serie",
+                "Periodo_Desde",
+                "Periodo_Hasta",
+                "Dias",
+                "Bimestre",
+                "kWh_Basico",
+                "kWh_Intermedio",
+                "kWh_Excedente",
+                "kWh_Total",
+                "Importe_Energia_MXN",
+                "IVA_MXN",
+                "DAP_MXN",
+                "Subsidio_MXN",
+                "Total_Recibo_MXN",
+                "Fecha_Limite",
+                "Estado_Pago",
+                "Origen",
+            ])
+
+            for inv in invoices:
+                writer.writerow([
+                    inv.get("folio", ""),
+                    inv.get("serie", ""),
+                    inv.get("periodo_desde", ""),
+                    inv.get("periodo_hasta", ""),
+                    inv.get("dias", 0),
+                    inv.get("periodo_label", ""),
+                    inv.get("kwh_basico", 0),
+                    inv.get("kwh_intermedio", 0),
+                    inv.get("kwh_excedente", 0),
+                    inv.get("kwh_total", 0),
+                    inv.get("subtotal_energia", 0.0),
+                    inv.get("iva", 0.0),
+                    inv.get("dap", 0.0),
+                    inv.get("subsidio_gub", 0.0),
+                    inv.get("total_recibo", 0.0),
+                    inv.get("fecha_limite", ""),
+                    "Pagado" if inv.get("is_paid") else "Pendiente",
+                    "Addenda Histórica" if inv.get("is_historical_only") else "Factura XML",
+                ])
+
+            # UTF-8 con BOM para que Excel abra acentos y columnas correctamente
+            csv_bytes = ("\ufeff" + csv_buffer.getvalue()).encode("utf-8")
+            filename = f"cfe_resumen_facturas_{datetime.now().strftime('%Y%m%d')}.csv"
+
+            self.send_response(200)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+            self.send_header("Content-Length", str(len(csv_bytes)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(csv_bytes)
+            return
+
+        if parsed_url.path in ("", "/", "/index.html"):
             self.path = "/index.html"
         return super().do_GET()
 
     def do_POST(self):
         parsed_url = urlparse(self.path)
-        if parsed_url.path != "/api/upload":
+        req_path = parsed_url.path.rstrip("/")
+        if req_path != "/api/upload":
             self._send_json(404, {"error": "Ruta no encontrada"})
             return
 
@@ -65,9 +181,7 @@ class CFEDashboardHandler(SimpleHTTPRequestHandler):
             self._send_json(400, {"error": f"Formato de petición inválido: {exc}"})
             return
 
-        env_vars = load_env(ENV_PATH)
-        input_dir = os.path.join(BASE_DIR, env_vars.get("INPUT_DIR", "input"))
-        os.makedirs(input_dir, exist_ok=True)
+        input_dir = get_input_dir()
 
         # Obtener claves existentes (Serie-Folio) para evitar duplicados
         existing_data = load_all_cfe_data(input_dir=input_dir, env_path=ENV_PATH)
@@ -135,14 +249,17 @@ class CFEDashboardHandler(SimpleHTTPRequestHandler):
 
 def run_server():
     env_vars = load_env(ENV_PATH)
-    port = int(env_vars.get("PORT", "8050") or 8050)
-    server_address = ("127.0.0.1", port)
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT") or env_vars.get("PORT", "8050") or 8050)
+    input_dir = get_input_dir()
+
+    server_address = (host, port)
     httpd = HTTPServer(server_address, CFEDashboardHandler)
-    print(f"============================================================")
-    print(f"⚡ CFE Analizer Dashboard activo en: http://localhost:{port}")
-    print(f"📂 Directorio de facturas XML: {env_vars.get('INPUT_DIR', 'input')}/")
-    print(f"🔒 Datos personales cargados desde: .env")
-    print(f"============================================================")
+    print("============================================================")
+    print(f"⚡ CFE Analizer Dashboard activo en: http://{host}:{port}")
+    print(f"📂 Directorio de facturas XML: {input_dir}")
+    print(f"🔒 Datos personales cargados desde: {ENV_PATH}")
+    print("============================================================")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

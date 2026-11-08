@@ -25,9 +25,13 @@
 
   const el = (id) => document.getElementById(id);
 
+  // Detección automática del path base para Ingress en Home Assistant y local
+  const API_BASE = window.location.pathname.replace(/\/index\.html$/i, "").replace(/\/$/, "");
+  const apiUrl = (endpoint) => `${API_BASE}/${endpoint.replace(/^\//, "")}`;
+
   async function fetchDashboardData() {
     try {
-      const res = await fetch("/api/data");
+      const res = await fetch(apiUrl("api/data"));
       appData = await res.json();
       const items = getActiveItems();
       if (items.length) {
@@ -656,7 +660,7 @@
     }
 
     try {
-      const res = await fetch("/api/upload", {
+      const res = await fetch(apiUrl("api/upload"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ files: filesPayload }),
@@ -721,6 +725,21 @@
     privacyMasked = !privacyMasked;
     applyPrivacyState();
   });
+
+  function triggerZipDownload() {
+    showToast("Preparando descarga de facturas XML...");
+    window.location.href = apiUrl("api/download/invoices.zip");
+  }
+
+  function triggerCsvDownload() {
+    showToast("Exportando resumen en CSV...");
+    window.location.href = apiUrl("api/download/summary.csv");
+  }
+
+  if (el("btn-download-zip")) el("btn-download-zip").addEventListener("click", triggerZipDownload);
+  if (el("btn-download-csv")) el("btn-download-csv").addEventListener("click", triggerCsvDownload);
+  if (el("btn-download-zip-prof")) el("btn-download-zip-prof").addEventListener("click", triggerZipDownload);
+  if (el("btn-download-csv-prof")) el("btn-download-csv-prof").addEventListener("click", triggerCsvDownload);
 
   el("btn-open-upload").addEventListener("click", () => {
     el("xml-file-input").click();

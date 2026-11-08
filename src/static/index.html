@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CFE Analizer</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <!-- Drop overlay global -->
@@ -32,6 +32,12 @@
           <button id="btn-mode-full" class="seg-btn" type="button">2022–2026</button>
         </div>
 
+        <button id="btn-download-zip" class="btn btn-ghost" type="button" title="Descargar todas las facturas XML en un archivo ZIP">
+          ⬇ ZIP
+        </button>
+        <button id="btn-download-csv" class="btn btn-ghost" type="button" title="Exportar resumen histórico en CSV">
+          📊 CSV
+        </button>
         <button id="btn-open-upload" class="btn btn-primary" type="button">
           + Subir XML
         </button>
@@ -416,9 +422,13 @@
           <div class="sq-card upload-drop-card" id="upload-dropzone">
             <div class="upload-inner">
               <div class="logo-sq lg">📂</div>
-              <h3>Incluir Nuevas Facturas XML</h3>
+              <h3>Gestionar Facturas XML</h3>
               <p>Arrastra archivos <code>.xml</code> de CFE aquí o selecciónalos desde tu computadora. Los duplicados se omiten automáticamente.</p>
-              <label for="xml-file-input" class="btn btn-primary">Seleccionar archivos XML</label>
+              <div class="action-buttons-row">
+                <label for="xml-file-input" class="btn btn-primary">Seleccionar archivos XML</label>
+                <button type="button" id="btn-download-zip-prof" class="btn btn-ghost">⬇ Descargar Todo (.zip)</button>
+                <button type="button" id="btn-download-csv-prof" class="btn btn-ghost">📊 Exportar Resumen (.csv)</button>
+              </div>
               <div class="files-summary-pill" id="prof-files">—</div>
             </div>
           </div>
@@ -428,6 +438,6 @@
   </div>
 
   <div id="chart-tooltip" class="chart-tooltip hidden"></div>
-  <script src="/app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
