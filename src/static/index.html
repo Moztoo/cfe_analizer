@@ -3,338 +3,425 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CFE Analizer — Dashboard de Consumo Eléctrico</title>
+  <title>CFE Analizer</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <!-- Zona de arrastrar y soltar global -->
+  <!-- Drop overlay global -->
   <div id="drop-overlay" class="drop-overlay hidden">
     <div class="drop-box">
-      <div class="drop-icon">⚡</div>
-      <h2>Suelta tus archivos XML de CFE aquí</h2>
-      <p>Se guardarán automáticamente en <code>input/</code> y actualizarán tus métricas</p>
+      <div class="drop-title">Soltar archivos XML</div>
+      <p>Se guardarán en <code>input/</code> y actualizarán los datos</p>
     </div>
   </div>
 
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-logo">⚡</div>
-      <div>
-        <h1>CFE Analizer</h1>
-        <p class="subtitle" id="header-subtitle">Cargando métricas de consumo...</p>
-      </div>
-    </div>
-
-    <div class="topbar-actions">
-      <div class="segmented-control" title="Alternar entre facturas XML directas o incluir los 11 bimestres históricos embebidos (2022-2023)">
-        <button id="btn-mode-direct" class="seg-btn active" type="button">Facturas XML (2024–2026)</button>
-        <button id="btn-mode-full" class="seg-btn" type="button">Historial Completo (2022–2026)</button>
+  <div class="app-shell">
+    <!-- Barra superior minimalista -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="logo-sq">⚡</div>
+        <span class="app-title">CFE Analizer</span>
+        <span class="divider">/</span>
+        <span id="header-period-badge" class="meta-pill">Cargando...</span>
       </div>
 
-      <button id="btn-privacy" class="btn btn-secondary" type="button" title="Mostrar u ocultar datos personales cargados desde .env">
-        🔒 <span id="privacy-label">Mostrar datos (.env)</span>
-      </button>
+      <!-- Navegación principal por vistas -->
+      <nav class="main-nav" aria-label="Vistas principales">
+        <button type="button" class="nav-btn active" data-view="overview">Resumen</button>
+        <button type="button" class="nav-btn" data-view="simulator">Simulador y Anual</button>
+        <button type="button" class="nav-btn" data-view="records">Facturas y Pagos</button>
+        <button type="button" class="nav-btn" data-view="profile">Suministro</button>
+      </nav>
 
-      <label for="xml-file-input" class="btn btn-primary">
-        ➕ Subir XML
-      </label>
-      <input id="xml-file-input" type="file" accept=".xml,.XML" multiple hidden />
-    </div>
-  </header>
+      <!-- Controles globales discretos -->
+      <div class="topbar-right">
+        <div class="segmented" title="Rango de datos">
+          <button id="btn-mode-direct" class="seg-btn active" type="button">2024–2026</button>
+          <button id="btn-mode-full" class="seg-btn" type="button">2022–2026</button>
+        </div>
 
-  <main class="container">
-    <!-- Notificación de subida -->
+        <button id="btn-open-upload" class="btn btn-primary" type="button">
+          + Subir XML
+        </button>
+        <input id="xml-file-input" type="file" accept=".xml,.XML" multiple hidden />
+      </div>
+    </header>
+
+    <!-- Notificación flotante -->
     <div id="toast" class="toast hidden"></div>
 
-    <!-- Barra de perfil de suministro (.env) -->
-    <section class="profile-bar">
-      <div class="profile-item">
-        <span class="profile-label">Titular (.env)</span>
-        <span class="profile-value sensitive" id="prof-titular">—</span>
-      </div>
-      <div class="profile-item">
-        <span class="profile-label">No. Servicio (RPU)</span>
-        <span class="profile-value sensitive" id="prof-rpu">—</span>
-      </div>
-      <div class="profile-item">
-        <span class="profile-label">Medidor / Tarifa</span>
-        <span class="profile-value"><span class="sensitive" id="prof-medidor">—</span> · Tarifa <strong id="prof-tarifa">01</strong></span>
-      </div>
-      <div class="profile-item">
-        <span class="profile-label">Ubicación (.env)</span>
-        <span class="profile-value sensitive" id="prof-direccion">—</span>
-      </div>
-      <div class="profile-item">
-        <span class="profile-label">Archivos Procesados</span>
-        <span class="profile-value" id="prof-files">—</span>
-      </div>
-    </section>
+    <!-- CONTENIDO DE VISTAS -->
+    <main class="view-container">
+      <!-- ==================== VISTA 1: RESUMEN ==================== -->
+      <section id="view-overview" class="view active">
+        <!-- 4 Tarjetas KPI esenciales -->
+        <div class="kpi-row">
+          <article class="sq-card kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Último Recibo · <span id="kpi-last-period">—</span></span>
+              <span id="kpi-last-badge" class="tag">—</span>
+            </div>
+            <div class="kpi-value" id="kpi-last-kwh">— kWh</div>
+            <div class="kpi-foot">
+              <span id="kpi-last-total">$—</span>
+              <span class="dot-sep">·</span>
+              <span id="kpi-last-daily">— kWh/día</span>
+            </div>
+          </article>
 
-    <!-- Tarjetas KPI -->
-    <section class="kpi-grid">
-      <article class="kpi-card highlight">
-        <div class="kpi-header">
-          <span class="kpi-title">Último Recibo (<span id="kpi-last-period">—</span>)</span>
-          <span id="kpi-last-badge" class="badge">—</span>
-        </div>
-        <div class="kpi-main" id="kpi-last-kwh">— kWh</div>
-        <div class="kpi-sub">
-          Total: <strong id="kpi-last-total">$—</strong> · Diario: <strong id="kpi-last-daily">— kWh/día</strong> (<span id="kpi-last-daily-cost">$—/día</span>)
-        </div>
-      </article>
+          <article class="sq-card kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Promedio Bimestral</span>
+              <span class="tag tag-neutral" id="kpi-count-bim">— bim</span>
+            </div>
+            <div class="kpi-value" id="kpi-avg-kwh">— kWh</div>
+            <div class="kpi-foot">
+              <span id="kpi-avg-cost">$— / bim</span>
+              <span class="dot-sep">·</span>
+              <span id="kpi-avg-daily-cost">$— / día</span>
+            </div>
+          </article>
 
-      <article class="kpi-card">
-        <div class="kpi-header">
-          <span class="kpi-title">Consumo Promedio Bimestral</span>
-          <span class="kpi-icon">📊</span>
-        </div>
-        <div class="kpi-main" id="kpi-avg-kwh">— kWh</div>
-        <div class="kpi-sub">
-          Promedio diario: <strong id="kpi-avg-daily-kwh">— kWh/día</strong><br />
-          Máx: <span id="kpi-max-kwh">—</span> · Mín: <span id="kpi-min-kwh">—</span>
-        </div>
-      </article>
+          <article class="sq-card kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Costo Efectivo</span>
+              <span class="tag tag-amber" id="kpi-exc-tag">Excedente —%</span>
+            </div>
+            <div class="kpi-value" id="kpi-cost-kwh">$— <small>/kWh</small></div>
+            <div class="kpi-foot">
+              <span>Acumulado: <strong id="kpi-total-cost">$—</strong></span>
+            </div>
+          </article>
 
-      <article class="kpi-card">
-        <div class="kpi-header">
-          <span class="kpi-title">Gasto Promedio Bimestral</span>
-          <span class="kpi-icon">💳</span>
+          <article class="sq-card kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Umbral DAC (12 meses)</span>
+              <span id="dac-badge" class="tag">—</span>
+            </div>
+            <div class="kpi-value" id="kpi-dac-rolling">— <small>/ 3,000 kWh</small></div>
+            <div class="progress-track">
+              <div id="dac-progress-bar" class="progress-fill" style="width: 0%"></div>
+            </div>
+            <div class="kpi-foot" id="kpi-dac-sub">Margen disponible: —</div>
+          </article>
         </div>
-        <div class="kpi-main" id="kpi-avg-cost">$—</div>
-        <div class="kpi-sub">
-          Costo diario: <strong id="kpi-avg-daily-cost">$—/día</strong><br />
-          Acumulado: <strong id="kpi-total-cost">$—</strong> (<span id="kpi-total-kwh">— kWh</span>)
-        </div>
-      </article>
 
-      <article class="kpi-card">
-        <div class="kpi-header">
-          <span class="kpi-title">Costo Efectivo por kWh</span>
-          <span class="kpi-icon">⚡</span>
-        </div>
-        <div class="kpi-main" id="kpi-cost-kwh">$— / kWh</div>
-        <div class="kpi-sub">
-          Incluye Energía + IVA (16%) + DAP<br />
-          Subsidio CFE acum.: <strong class="text-emerald" id="kpi-total-subsidio">$—</strong>
-        </div>
-      </article>
+        <!-- Panel interactivo: Gráfica principal + Inspector de recibo seleccionado -->
+        <div class="overview-main-grid">
+          <div class="sq-card chart-panel">
+            <div class="panel-header">
+              <div>
+                <h2 id="main-chart-title">Consumo por Escalón Tarifario (kWh)</h2>
+                <p id="main-chart-subtitle" class="panel-sub">Haz clic en cualquier barra para inspeccionar el recibo a la derecha.</p>
+              </div>
+              <div class="segmented" id="chart-type-switcher">
+                <button type="button" class="seg-btn active" data-chart="tiers">Consumo kWh</button>
+                <button type="button" class="seg-btn" data-chart="costs">Costos $</button>
+                <button type="button" class="seg-btn" data-chart="dac">Curva DAC</button>
+              </div>
+            </div>
 
-      <article class="kpi-card warning-border">
-        <div class="kpi-header">
-          <span class="kpi-title">Impacto Escalón Excedente</span>
-          <span class="badge badge-warn">&gt; 280 kWh/bim</span>
-        </div>
-        <div class="kpi-main text-amber" id="kpi-exc-cost-pct">—% del gasto</div>
-        <div class="kpi-sub">
-          El <strong id="kpi-exc-kwh-pct">—%</strong> de tus kWh están en tarifa Excedente (<span id="kpi-exc-kwh-total">— kWh</span> = <strong id="kpi-exc-cost-total">$—</strong> sin IVA)
-        </div>
-      </article>
-
-      <article class="kpi-card" id="dac-card">
-        <div class="kpi-header">
-          <span class="kpi-title">Monitor Umbral DAC (12 Meses)</span>
-          <span id="dac-badge" class="badge">—</span>
-        </div>
-        <div class="kpi-main" id="kpi-dac-rolling">— / 3,000 kWh</div>
-        <div class="progress-bar-wrap">
-          <div id="dac-progress-bar" class="progress-bar" style="width: 0%"></div>
-        </div>
-        <div class="kpi-sub" id="kpi-dac-sub">
-          Suma móvil últimos 6 bimestres vs límite Tarifa 01
-        </div>
-      </article>
-    </section>
-
-    <!-- Gráficas Principales -->
-    <section class="charts-grid">
-      <div class="card chart-card">
-        <div class="card-header">
-          <div>
-            <h2>Consumo Bimestral por Escalón Tarifario (kWh)</h2>
-            <p class="card-desc">Básico (0–150 kWh), Intermedio (151–280 kWh) y Excedente (&gt;280 kWh). Línea punteada: promedio DAC (500 kWh/bim).</p>
+            <div class="chart-legend" id="main-chart-legend"></div>
+            <div class="chart-stage" id="main-chart-stage"></div>
           </div>
-          <div class="legend-inline">
-            <span><i class="dot dot-basico"></i> Básico</span>
-            <span><i class="dot dot-intermedio"></i> Intermedio</span>
-            <span><i class="dot dot-excedente"></i> Excedente</span>
-          </div>
-        </div>
-        <div class="chart-container" id="chart-kwh-tiers"></div>
-      </div>
 
-      <div class="card chart-card">
-        <div class="card-header">
-          <div>
-            <h2>Evolución de Costo Facturado vs Subsidio CFE ($ MXN)</h2>
-            <p class="card-desc">Desglose de Energía, IVA (16%) y DAP por bimestre comparado con la Aportación Gubernamental.</p>
-          </div>
-          <div class="legend-inline">
-            <span><i class="dot dot-energia"></i> Energía</span>
-            <span><i class="dot dot-iva"></i> IVA 16%</span>
-            <span><i class="dot dot-dap"></i> DAP</span>
-            <span><i class="dot dot-subsidio"></i> Subsidio Gub.</span>
-          </div>
-        </div>
-        <div class="chart-container" id="chart-cost-breakdown"></div>
-      </div>
-    </section>
+          <!-- Inspector reactivo del bimestre seleccionado -->
+          <aside class="sq-card inspector-panel">
+            <div class="panel-header">
+              <div>
+                <span class="eyebrow">Detalle del Bimestre</span>
+                <h2 id="insp-period">—</h2>
+              </div>
+              <span id="insp-folio" class="mono-tag">—</span>
+            </div>
 
-    <!-- Segunda fila de gráficas: Riesgo DAC + Comparativa Anual -->
-    <section class="charts-grid">
-      <div class="card chart-card">
-        <div class="card-header">
-          <div>
-            <h2>Acumulado Móvil Anual (6 Bimestres) vs Límite DAC</h2>
-            <p class="card-desc">En Tarifa 01, superar 3,000 kWh en los últimos 12 meses (promedio &gt;500 kWh/bimestre) reclasifica a tarifa DAC sin subsidio.</p>
-          </div>
-        </div>
-        <div class="chart-container" id="chart-dac-rolling"></div>
-      </div>
+            <div class="insp-hero">
+              <div>
+                <div class="insp-big" id="insp-total">$—</div>
+                <div class="insp-caption" id="insp-dates">—</div>
+              </div>
+              <div class="insp-right">
+                <div class="insp-kwh" id="insp-kwh">— kWh</div>
+                <div class="insp-caption" id="insp-daily">— kWh/día</div>
+              </div>
+            </div>
 
-      <div class="card chart-card">
-        <div class="card-header">
-          <div>
-            <h2>Resumen Comparativo por Año</h2>
-            <p class="card-desc">Comparación anual de consumo acumulado, promedio bimestral y costo efectivo por kWh.</p>
-          </div>
-        </div>
-        <div class="year-table-wrap">
-          <table class="data-table compact-table" id="year-summary-table">
-            <thead>
-              <tr>
-                <th>Año</th>
-                <th>Bimestres</th>
-                <th>Consumo Total</th>
-                <th>Prom. / Bimestre</th>
-                <th>Total Facturado</th>
-                <th>Prom. Recibo</th>
-                <th>Costo / kWh</th>
-                <th>Subsidio CFE</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+            <div class="insp-section">
+              <div class="insp-section-title">Desglose de Escalones</div>
+              <div class="tier-bars">
+                <div class="tier-row">
+                  <span class="tier-name"><i class="sq-dot c-basico"></i> Básico</span>
+                  <span class="tier-val" id="insp-b-kwh">— kWh</span>
+                  <span class="tier-cost" id="insp-b-cost">$—</span>
+                </div>
+                <div class="tier-row">
+                  <span class="tier-name"><i class="sq-dot c-intermedio"></i> Intermedio</span>
+                  <span class="tier-val" id="insp-i-kwh">— kWh</span>
+                  <span class="tier-cost" id="insp-i-cost">$—</span>
+                </div>
+                <div class="tier-row">
+                  <span class="tier-name"><i class="sq-dot c-excedente"></i> Excedente</span>
+                  <span class="tier-val" id="insp-e-kwh">— kWh</span>
+                  <span class="tier-cost" id="insp-e-cost">$—</span>
+                </div>
+              </div>
+            </div>
 
-    <!-- Simulador Interactivo de Ahorro + Zona de Carga -->
-    <section class="simulator-upload-grid">
-      <div class="card simulator-card">
-        <div class="card-header">
-          <div>
-            <h2>💡 Simulador de Ahorro en Escalón Excedente</h2>
-            <p class="card-desc">Cada kWh que reduces por encima de 280 kWh/bimestre te ahorra ~$4.03 + IVA + DAP (~$4.99 MXN/kWh).</p>
-          </div>
+            <div class="insp-section">
+              <div class="insp-section-title">Conceptos Financieros</div>
+              <div class="kv-list">
+                <div class="kv-item">
+                  <span>Energía (Subtotal)</span>
+                  <strong id="insp-energia">$—</strong>
+                </div>
+                <div class="kv-item">
+                  <span>IVA (16%)</span>
+                  <strong id="insp-iva">$—</strong>
+                </div>
+                <div class="kv-item">
+                  <span>Alumbrado Público (DAP)</span>
+                  <strong id="insp-dap">$—</strong>
+                </div>
+                <div class="kv-item">
+                  <span>Aportación Gubernamental</span>
+                  <strong class="c-text-emerald" id="insp-subsidio">$—</strong>
+                </div>
+                <div class="kv-item">
+                  <span>Lectura de Medidor</span>
+                  <strong class="mono" id="insp-lecturas">—</strong>
+                </div>
+                <div class="kv-item">
+                  <span>Estado de Pago</span>
+                  <strong id="insp-pago">—</strong>
+                </div>
+              </div>
+            </div>
+          </aside>
         </div>
-        <div class="simulator-body">
-          <div class="sim-controls">
-            <label for="sim-slider">
-              Meta de reducción de consumo: <strong id="sim-pct-label">15%</strong>
-              (<span id="sim-kwh-target-label">— kWh/bim</span>)
-            </label>
-            <input type="range" id="sim-slider" min="5" max="55" step="1" value="15" />
-            <div class="sim-presets">
-              <button type="button" class="chip" data-target-pct="10">-10% consumo</button>
-              <button type="button" class="chip" data-target-pct="20">-20% consumo</button>
-              <button type="button" class="chip" id="btn-sim-no-dac">Seguridad DAC (450 kWh)</button>
-              <button type="button" class="chip" id="btn-sim-no-exc">Cero Excedente (280 kWh)</button>
+      </section>
+
+      <!-- ==================== VISTA 2: SIMULADOR Y ANUAL ==================== -->
+      <section id="view-simulator" class="view hidden">
+        <div class="two-col-grid">
+          <!-- Simulador Reactivo -->
+          <div class="sq-card">
+            <div class="panel-header">
+              <div>
+                <span class="eyebrow">Simulador Reactivo</span>
+                <h2>Proyección de Ahorro en Escalón Excedente</h2>
+                <p class="panel-sub">Cada kWh reducido por encima de 280 kWh ahorra el costo marginal más alto de CFE.</p>
+              </div>
+            </div>
+
+            <div class="sim-box">
+              <div class="sim-slider-header">
+                <span>Reducción objetivo: <strong id="sim-pct-label">15%</strong></span>
+                <span class="mono-tag" id="sim-kwh-target-label">— kWh / bimestre</span>
+              </div>
+
+              <input type="range" id="sim-slider" min="0" max="60" step="1" value="15" />
+
+              <div class="preset-row">
+                <button type="button" class="chip-btn" data-target-pct="10">-10%</button>
+                <button type="button" class="chip-btn" data-target-pct="20">-20%</button>
+                <button type="button" class="chip-btn" id="btn-sim-no-dac">Meta bajo DAC (450 kWh)</button>
+                <button type="button" class="chip-btn" id="btn-sim-no-exc">Sin Excedente (280 kWh)</button>
+              </div>
+
+              <div class="sim-cards-row">
+                <div class="mini-sq">
+                  <span class="mini-label">Recibo Base (<span id="sim-ref-period">—</span>)</span>
+                  <div class="mini-val" id="sim-curr-bill">$—</div>
+                  <span class="mini-sub" id="sim-curr-kwh">— kWh</span>
+                </div>
+
+                <div class="mini-sq">
+                  <span class="mini-label">Recibo Simulado</span>
+                  <div class="mini-val c-text-emerald" id="sim-new-bill">$—</div>
+                  <span class="mini-sub" id="sim-new-kwh">— kWh</span>
+                </div>
+
+                <div class="mini-sq active-border">
+                  <span class="mini-label">Ahorro Estimado</span>
+                  <div class="mini-val c-text-amber" id="sim-saving-bim">$— <small>/bim</small></div>
+                  <span class="mini-sub">Anual: <strong id="sim-saving-year">$—</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Resumen de proporción de costo excedente -->
+            <div class="exc-insight-box">
+              <div class="exc-col">
+                <span class="mini-label">Proporción de Energía Excedente</span>
+                <div class="exc-big" id="kpi-exc-kwh-pct">—%</div>
+                <span class="mini-sub">de los kWh consumidos (<span id="kpi-exc-kwh-total">— kWh</span>)</span>
+              </div>
+              <div class="exc-arrow">→</div>
+              <div class="exc-col">
+                <span class="mini-label">Proporción del Costo de Energía</span>
+                <div class="exc-big c-text-amber" id="kpi-exc-cost-pct">—%</div>
+                <span class="mini-sub">del subtotal de energía (<span id="kpi-exc-cost-total">$—</span>)</span>
+              </div>
             </div>
           </div>
-          <div class="sim-results">
-            <div class="sim-stat">
-              <span class="sim-stat-label">Recibo Actual (<span id="sim-ref-period">—</span>)</span>
-              <span class="sim-stat-val" id="sim-curr-bill">$—</span>
-              <span class="sim-stat-sub" id="sim-curr-kwh">— kWh</span>
+
+          <!-- Tabla Comparativa por Año -->
+          <div class="sq-card">
+            <div class="panel-header">
+              <div>
+                <span class="eyebrow">Comparativa Histórica</span>
+                <h2>Resumen Anual</h2>
+                <p class="panel-sub">Promedios bimestrales, totales anuales y subsidio gubernamental recibido.</p>
+              </div>
             </div>
-            <div class="sim-stat">
-              <span class="sim-stat-label">Nuevo Recibo Estimado</span>
-              <span class="sim-stat-val text-emerald" id="sim-new-bill">$—</span>
-              <span class="sim-stat-sub" id="sim-new-kwh">— kWh</span>
-            </div>
-            <div class="sim-stat highlight-stat">
-              <span class="sim-stat-label">Ahorro Estimado</span>
-              <span class="sim-stat-val text-amber" id="sim-saving-bim">$— / bim</span>
-              <span class="sim-stat-sub">Proyección anual: <strong id="sim-saving-year">$— / año</strong></span>
+
+            <div class="table-wrap">
+              <table class="clean-table" id="year-summary-table">
+                <thead>
+                  <tr>
+                    <th>Año</th>
+                    <th>Bimestres</th>
+                    <th>Total kWh</th>
+                    <th>Prom. / Bim</th>
+                    <th>Facturado</th>
+                    <th>Prom. Recibo</th>
+                    <th>$/kWh</th>
+                    <th>Subsidio</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="card upload-card" id="upload-dropzone">
-        <div class="upload-content">
-          <div class="upload-icon">📂</div>
-          <h3>Agregar Nuevas Facturas XML</h3>
-          <p>Arrastra y suelta aquí tus archivos <code>.xml</code> de CFE (Facturas <code>PE</code> o Complementos de Pago <code>PV</code> / <code>P9</code>) o selecciónalos desde tu equipo.</p>
-          <label for="xml-file-input" class="btn btn-primary">Seleccionar archivos XML</label>
-          <p class="upload-hint">También puedes copiar nuevos XML directamente dentro de la carpeta <code>input/</code> y recargar.</p>
+      <!-- ==================== VISTA 3: FACTURAS Y PAGOS ==================== -->
+      <section id="view-records" class="view hidden">
+        <div class="sq-card">
+          <div class="panel-header records-bar">
+            <div class="segmented">
+              <button type="button" id="tab-invoices" class="seg-btn active">
+                Facturas PE (<span id="count-invoices">0</span>)
+              </button>
+              <button type="button" id="tab-payments" class="seg-btn">
+                Pagos PV/P9 (<span id="count-payments">0</span>)
+              </button>
+            </div>
+
+            <div class="filter-bar">
+              <select id="filter-year" class="clean-input">
+                <option value="all">Todos los años</option>
+              </select>
+              <input
+                type="search"
+                id="filter-search"
+                class="clean-input search-input"
+                placeholder="Filtrar por folio, fecha, estado..."
+              />
+            </div>
+          </div>
+
+          <!-- Tabla Facturas -->
+          <div id="view-invoices-table" class="table-wrap">
+            <table class="clean-table" id="invoices-table">
+              <thead>
+                <tr>
+                  <th>Bimestre</th>
+                  <th>Folio</th>
+                  <th>Periodo</th>
+                  <th>Días</th>
+                  <th>Lecturas</th>
+                  <th>Consumo</th>
+                  <th>Bás / Int / Exc</th>
+                  <th>kWh/día</th>
+                  <th>Energía</th>
+                  <th>IVA + DAP</th>
+                  <th>Total</th>
+                  <th>$/kWh</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <!-- Tabla Pagos -->
+          <div id="view-payments-table" class="table-wrap hidden">
+            <table class="clean-table" id="payments-table">
+              <thead>
+                <tr>
+                  <th>Serie - Folio</th>
+                  <th>Bimestre OCR</th>
+                  <th>Concepto</th>
+                  <th>Fecha Pago</th>
+                  <th>Monto</th>
+                  <th>Doc. Relacionado</th>
+                  <th>Archivo</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Tabla Detallada de Facturas y Pagos -->
-    <section class="card table-section">
-      <div class="card-header table-header-bar">
-        <div class="tabs">
-          <button type="button" id="tab-invoices" class="tab-btn active">📄 Facturas de Consumo (<span id="count-invoices">0</span>)</button>
-          <button type="button" id="tab-payments" class="tab-btn">🧾 Complementos de Pago PV/P9 (<span id="count-payments">0</span>)</button>
+      <!-- ==================== VISTA 4: SUMINISTRO Y ARCHIVOS ==================== -->
+      <section id="view-profile" class="view hidden">
+        <div class="two-col-grid">
+          <div class="sq-card">
+            <div class="panel-header">
+              <div>
+                <span class="eyebrow">Variables de Entorno (.env)</span>
+                <h2>Datos del Suministro</h2>
+                <p class="panel-sub">Estos datos se leen localmente desde <code>.env</code> y están excluidos de Git.</p>
+              </div>
+              <button id="btn-privacy" class="btn btn-ghost" type="button">
+                🔒 <span id="privacy-label">Mostrar datos</span>
+              </button>
+            </div>
+
+            <div class="profile-grid">
+              <div class="mini-sq">
+                <span class="mini-label">Titular</span>
+                <div class="mini-val-sm sensitive" id="prof-titular">—</div>
+              </div>
+              <div class="mini-sq">
+                <span class="mini-label">RPU (No. de Servicio)</span>
+                <div class="mini-val-sm mono sensitive" id="prof-rpu">—</div>
+              </div>
+              <div class="mini-sq">
+                <span class="mini-label">RFC</span>
+                <div class="mini-val-sm mono sensitive" id="prof-rfc">—</div>
+              </div>
+              <div class="mini-sq">
+                <span class="mini-label">RMU</span>
+                <div class="mini-val-sm mono sensitive" id="prof-rmu">—</div>
+              </div>
+              <div class="mini-sq">
+                <span class="mini-label">Medidor y Tarifa</span>
+                <div class="mini-val-sm"><span class="mono sensitive" id="prof-medidor">—</span> · Tarifa <strong id="prof-tarifa">01</strong></div>
+              </div>
+              <div class="mini-sq">
+                <span class="mini-label">Dirección</span>
+                <div class="mini-val-sm sensitive" id="prof-direccion">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sq-card upload-drop-card" id="upload-dropzone">
+            <div class="upload-inner">
+              <div class="logo-sq lg">📂</div>
+              <h3>Incluir Nuevas Facturas XML</h3>
+              <p>Arrastra archivos <code>.xml</code> de CFE aquí o selecciónalos desde tu computadora. Los duplicados se omiten automáticamente.</p>
+              <label for="xml-file-input" class="btn btn-primary">Seleccionar archivos XML</label>
+              <div class="files-summary-pill" id="prof-files">—</div>
+            </div>
+          </div>
         </div>
-        <div class="table-filters">
-          <select id="filter-year" class="input-select">
-            <option value="all">Todos los años</option>
-          </select>
-          <input type="search" id="filter-search" class="input-search" placeholder="Buscar folio, periodo, estado..." />
-        </div>
-      </div>
-
-      <!-- Tabla Facturas -->
-      <div id="view-invoices" class="table-responsive">
-        <table class="data-table" id="invoices-table">
-          <thead>
-            <tr>
-              <th>Bimestre</th>
-              <th>Folio</th>
-              <th>Periodo Facturado</th>
-              <th>Días</th>
-              <th>Lecturas</th>
-              <th>Total kWh</th>
-              <th>Básico / Int. / Exc.</th>
-              <th>kWh/día</th>
-              <th>Energía</th>
-              <th>IVA + DAP</th>
-              <th>Total CFDI</th>
-              <th>$/kWh</th>
-              <th>Subsidio Gub.</th>
-              <th>Estado / Pago</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-
-      <!-- Tabla Complementos de Pago -->
-      <div id="view-payments" class="table-responsive hidden">
-        <table class="data-table" id="payments-table">
-          <thead>
-            <tr>
-              <th>Serie - Folio</th>
-              <th>Bimestre (OCR)</th>
-              <th>Concepto</th>
-              <th>Fecha de Pago</th>
-              <th>Monto Pagado</th>
-              <th>Doc. Relacionado</th>
-              <th>Archivo XML</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <p>CFE Analizer · Datos personales aislados en <code>.env</code> y excluidos por <code>.gitignore</code>.</p>
-  </footer>
+      </section>
+    </main>
+  </div>
 
   <div id="chart-tooltip" class="chart-tooltip hidden"></div>
   <script src="/app.js"></script>
