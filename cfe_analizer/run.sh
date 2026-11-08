@@ -25,14 +25,7 @@ os.makedirs(input_dir, exist_ok=True)
 
 env_lines = [
     f'INPUT_DIR={input_dir}',
-    f'PORT={opts.get(\"port\", 8050)}',
-    f'CFE_TITULAR={opts.get(\"cfe_titular\", \"\")}',
-    f'CFE_RPU={opts.get(\"cfe_rpu\", \"\")}',
-    f'CFE_RFC={opts.get(\"cfe_rfc\", \"\")}',
-    f'CFE_RMU={opts.get(\"cfe_rmu\", \"\")}',
-    f'CFE_MEDIDOR={opts.get(\"cfe_medidor\", \"\")}',
-    f'CFE_DIRECCION={opts.get(\"cfe_direccion\", \"\")}',
-    f'CFE_TARIFA={opts.get(\"cfe_tarifa\", \"01\")}',
+    f'PORT=8050',
     f'DAC_LIMITE_ANUAL_KWH={opts.get(\"dac_limite_anual_kwh\", 3000)}',
     f'CFE_API_TOKEN={opts.get(\"api_token\", \"\")}',
 ]

@@ -34,15 +34,13 @@ Dashboard web interactivo para visualizar, analizar y auditar el historial de co
 
 ## Configuración
 
-En la pestaña **Configuración** del add-on puedes personalizar:
+En la pestaña **Configuración** del add-on puedes personalizar las opciones esenciales:
 
-- `cfe_titular`: Nombre del titular del contrato.
-- `cfe_tarifa`: Tarifa contratada (ej. `01`, `1A`, `1B`).
-- `cfe_medidor`: Número del medidor.
-- `cfe_direccion`: Dirección del suministro.
-- `dac_limite_anual_kwh`: Límite anual para entrar en tarifa DAC (por defecto `3000` kWh).
-- `input_dir`: Directorio persistente de almacenamiento (por defecto `/share/cfe_analizer/input`).
 - `api_token`: Token secreto para autorizar peticiones desde Google Apps Script (cabecera `Authorization: Bearer <TOKEN>`).
+- `dac_limite_anual_kwh`: Límite anual para entrar en tarifa DAC (por defecto `3000` kWh).
+- `input_dir`: Directorio persistente de almacenamiento de facturas (por defecto `/share/cfe_analizer/input`).
+
+*(Nota: Los datos de tu contrato, tarifa, lecturas y medidor se extraen e importan de forma 100% automática desde los archivos XML de cada factura).*
 
 ---
 

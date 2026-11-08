@@ -1,6 +1,6 @@
 name: "CFE Analizer"
 description: "Dashboard de facturas y análisis de consumo eléctrico de CFE con Ingress"
-version: "1.1.0"
+version: "1.2.0"
 slug: "cfe_analizer"
 url: "https://github.com/Moztoo/cfe_analizer"
 init: false
@@ -24,25 +24,9 @@ map:
   - share:rw
 options:
   input_dir: "/share/cfe_analizer/input"
-  port: 8050
   api_token: ""
-  cfe_titular: ""
-  cfe_rpu: ""
-  cfe_rfc: ""
-  cfe_rmu: ""
-  cfe_medidor: ""
-  cfe_direccion: ""
-  cfe_tarifa: "01"
   dac_limite_anual_kwh: 3000
 schema:
   input_dir: str
-  port: port
   api_token: password?
-  cfe_titular: str?
-  cfe_rpu: str?
-  cfe_rfc: str?
-  cfe_rmu: str?
-  cfe_medidor: str?
-  cfe_direccion: str?
-  cfe_tarifa: str?
   dac_limite_anual_kwh: int?
