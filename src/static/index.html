@@ -25,14 +25,6 @@
         <span id="header-period-badge" class="meta-pill">Cargando...</span>
       </div>
 
-      <!-- Navegación principal por vistas -->
-      <nav class="main-nav" aria-label="Vistas principales">
-        <button type="button" class="nav-btn active" data-view="overview">Resumen</button>
-        <button type="button" class="nav-btn" data-view="simulator">Simulador y Anual</button>
-        <button type="button" class="nav-btn" data-view="records">Facturas y Pagos</button>
-        <button type="button" class="nav-btn" data-view="profile">Suministro</button>
-      </nav>
-
       <!-- Controles globales discretos -->
       <div class="topbar-right">
         <div class="segmented" title="Rango de datos">
@@ -46,6 +38,26 @@
         <input id="xml-file-input" type="file" accept=".xml,.XML" multiple hidden />
       </div>
     </header>
+
+    <!-- Barra de Pestañas (Tabs) -->
+    <nav class="tabs-bar" role="tablist" aria-label="Secciones del dashboard">
+      <button type="button" role="tab" aria-selected="true" class="nav-btn active" data-view="overview">
+        <span>Resumen y Gráficas</span>
+        <kbd class="tab-kbd">1</kbd>
+      </button>
+      <button type="button" role="tab" aria-selected="false" class="nav-btn" data-view="simulator">
+        <span>Simulador y Anual</span>
+        <kbd class="tab-kbd">2</kbd>
+      </button>
+      <button type="button" role="tab" aria-selected="false" class="nav-btn" data-view="records">
+        <span>Historial de Facturas</span>
+        <kbd class="tab-kbd">3</kbd>
+      </button>
+      <button type="button" role="tab" aria-selected="false" class="nav-btn" data-view="profile">
+        <span>Suministro y XML</span>
+        <kbd class="tab-kbd">4</kbd>
+      </button>
+    </nav>
 
     <!-- Notificación flotante -->
     <div id="toast" class="toast hidden"></div>

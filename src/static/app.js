@@ -54,7 +54,9 @@
   function switchView(targetView) {
     currentView = targetView;
     document.querySelectorAll(".nav-btn").forEach((btn) => {
-      btn.classList.toggle("active", btn.getAttribute("data-view") === targetView);
+      const isMatch = btn.getAttribute("data-view") === targetView;
+      btn.classList.toggle("active", isMatch);
+      btn.setAttribute("aria-selected", isMatch ? "true" : "false");
     });
     ["overview", "simulator", "records", "profile"].forEach((v) => {
       el(`view-${v}`).classList.toggle("hidden", v !== targetView);
@@ -757,6 +759,14 @@
   });
   dropzone.addEventListener("drop", (e) => {
     handleFilesUpload(e.dataTransfer.files);
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+    if (e.key === "1") switchView("overview");
+    if (e.key === "2") switchView("simulator");
+    if (e.key === "3") switchView("records");
+    if (e.key === "4") switchView("profile");
   });
 
   window.addEventListener("resize", () => {
