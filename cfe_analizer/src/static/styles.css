@@ -247,6 +247,26 @@ body {
   border-color: var(--border-strong);
 }
 
+.btn-delete {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #f87171;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.12s ease;
+}
+
+.btn-delete:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+
 /* Views */
 .view {
   display: flex;

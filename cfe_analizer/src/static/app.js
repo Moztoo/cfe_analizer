@@ -601,6 +601,13 @@
             <div class="cell-sub">${fmtMoney(inv.costo_kwh_total)} / kWh</div>
           </td>
           <td><span class="tag">${inv.estado_pago}</span></td>
+          <td>
+            ${
+              !inv.is_historical_only && inv.filename
+                ? `<button type="button" class="btn-delete" data-file="${inv.filename}" title="Retirar ${inv.filename}">🗑️ Retirar</button>`
+                : `<span style="font-size: 0.74rem; color: var(--text-muted);">—</span>`
+            }
+          </td>
         </tr>`;
       })
       .join("");
@@ -627,9 +634,98 @@
         <td><strong>${fmtMoney(p.monto)}</strong></td>
         <td class="mono">${p.dr_serie}-${p.dr_folio}</td>
         <td class="mono">${p.filename}</td>
+        <td>
+          <button type="button" class="btn-delete" data-file="${p.filename}" title="Retirar ${p.filename}">🗑️ Retirar</button>
+        </td>
       </tr>`
       )
       .join("");
+  }
+
+  function renderFilesManager() {
+    const tbody = el("files-manage-tbody");
+    if (!tbody || !appData) return;
+
+    const directInvoices = (appData.invoices || []).filter(
+      (inv) => !inv.is_historical_only && inv.filename
+    );
+    const payments = appData.payments || [];
+
+    const allFiles = [];
+    directInvoices.forEach((inv) => {
+      allFiles.push({
+        filename: inv.filename,
+        kind: "Factura CFE (Ingreso)",
+        serieFolio: inv.key,
+        periodo: `${inv.periodo_desde} a ${inv.periodo_hasta}`,
+      });
+    });
+
+    payments.forEach((p) => {
+      allFiles.push({
+        filename: p.filename,
+        kind: `Complemento Pago (${p.concepto})`,
+        serieFolio: p.key,
+        periodo: p.fecha_pago,
+      });
+    });
+
+    const badge = el("manage-files-count");
+    if (badge) badge.textContent = `${allFiles.length} archivo(s)`;
+
+    if (!allFiles.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">No hay archivos XML guardados en el almacenamiento del servidor.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = allFiles
+      .map(
+        (f) => `
+      <tr>
+        <td class="mono" style="font-weight: 600;">${f.filename}</td>
+        <td><span class="tag ${f.kind.includes('Pago') ? 'tag-amber' : 'tag-down'}">${f.kind}</span></td>
+        <td class="mono">${f.serieFolio}</td>
+        <td>${f.periodo}</td>
+        <td>
+          <button type="button" class="btn-delete" data-file="${f.filename}" title="Retirar ${f.filename}">🗑️ Retirar</button>
+        </td>
+      </tr>`
+      )
+      .join("");
+  }
+
+  async function confirmAndDeleteFile(filename) {
+    if (!filename) return;
+    const ok = window.confirm(
+      `¿Estás seguro de que deseas retirar permanentemente el archivo "${filename}" del servidor?\n\nEsta acción eliminará la factura y recalculará automáticamente todas las métricas del dashboard.`
+    );
+    if (!ok) return;
+
+    try {
+      showToast(`Retirando ${filename}...`);
+      const res = await fetch(apiUrl("api/delete"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename }),
+      });
+      const result = await res.json();
+      if (result.status === "success" && result.data) {
+        appData = result.data;
+        showToast(`Archivo ${filename} retirado correctamente`);
+        const items = getActiveItems();
+        if (items.length) {
+          selectedPeriodKey = items[items.length - 1].key;
+        } else {
+          selectedPeriodKey = null;
+        }
+        populateYearFilter();
+        renderAll();
+      } else {
+        showToast(`Error: ${result.message || "No se pudo eliminar el archivo"}`);
+      }
+    } catch (err) {
+      showToast(`Error de conexión: ${err.message}`);
+    }
   }
 
   function renderAll() {
@@ -641,6 +737,7 @@
     renderYearTable();
     updateSimulator();
     renderTables();
+    renderFilesManager();
   }
 
   /* Subida de archivos XML */
@@ -821,6 +918,17 @@
   window.addEventListener("resize", () => {
     if (appData && currentView === "overview") {
       renderMainChart();
+    }
+  });
+
+  // Listener para botones de eliminar archivos con confirmación
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".btn-delete");
+    if (btn) {
+      e.stopPropagation();
+      e.preventDefault();
+      const file = btn.getAttribute("data-file");
+      confirmAndDeleteFile(file);
     }
   });
 

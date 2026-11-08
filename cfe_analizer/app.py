@@ -420,6 +420,49 @@ class CFEDashboardHandler(SimpleHTTPRequestHandler):
             },
         )
 
+    def _handle_delete_file(self):
+        """Elimina un archivo XML del directorio de almacenamiento de forma segura."""
+        try:
+            content_length = int(self.headers.get("Content-Length", "0"))
+            raw_body = self.rfile.read(content_length).decode("utf-8")
+            payload = json.loads(raw_body)
+        except Exception:
+            self._send_json(400, {"status": "error", "message": "Petición JSON inválida"})
+            return
+
+        if not isinstance(payload, dict):
+            self._send_json(400, {"status": "error", "message": "Formato de payload inválido"})
+            return
+
+        filename = os.path.basename(str(payload.get("filename", "")).strip())
+        if not filename or not filename.lower().endswith(".xml"):
+            self._send_json(400, {"status": "error", "message": "Nombre de archivo inválido (debe terminar en .xml)"})
+            return
+
+        # Validación de seguridad: caracteres alfanuméricos, guiones y puntos únicamente
+        if not re.match(r"^[A-Za-z0-9._-]+\.xml$", filename, re.IGNORECASE):
+            self._send_json(400, {"status": "error", "message": "Nombre de archivo contiene caracteres sospechosos"})
+            return
+
+        input_dir = get_input_dir()
+        target_path = os.path.join(input_dir, filename)
+
+        if not os.path.isfile(target_path):
+            self._send_json(404, {"status": "error", "message": f"El archivo '{filename}' no existe en el almacenamiento"})
+            return
+
+        try:
+            os.remove(target_path)
+            updated_data = load_all_cfe_data(input_dir=input_dir, env_path=ENV_PATH)
+            self._send_json(200, {
+                "status": "success",
+                "message": f"Archivo '{filename}' eliminado correctamente",
+                "deleted": filename,
+                "data": updated_data
+            })
+        except Exception as exc:
+            self._send_json(500, {"status": "error", "message": f"Error al eliminar el archivo: {exc}"})
+
     def do_POST(self):
         parsed_url = urlparse(self.path)
         req_path = parsed_url.path.rstrip("/")
@@ -432,6 +475,11 @@ class CFEDashboardHandler(SimpleHTTPRequestHandler):
         # Endpoint de carga web (drag and drop)
         if req_path == "/api/upload":
             self._handle_web_upload()
+            return
+
+        # Endpoint para eliminar un archivo XML específico con confirmación
+        if req_path in ("/api/delete", "/api/files/delete"):
+            self._handle_delete_file()
             return
 
         self._send_json(404, {"error": "Ruta no encontrada"})

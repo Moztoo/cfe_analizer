@@ -350,6 +350,7 @@
                   <th>IVA + DAP</th>
                   <th>Total / Costo kWh</th>
                   <th>Estado</th>
+                  <th>Acción</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -368,6 +369,7 @@
                   <th>Monto</th>
                   <th>Doc. Relacionado</th>
                   <th>Archivo</th>
+                  <th>Acción</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -431,6 +433,34 @@
               </div>
               <div class="files-summary-pill" id="prof-files">—</div>
             </div>
+          </div>
+        </div>
+
+        <!-- Control y Limpieza de Archivos XML -->
+        <div class="sq-card files-manager-card">
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">Almacenamiento Local</span>
+              <h2>Limpieza y Control de Facturas XML</h2>
+              <p class="panel-sub">Lista de comprobantes almacenados en el servidor. Puedes retirar archivos individuales con confirmación previa.</p>
+            </div>
+            <div class="meta-pill" id="manage-files-count">0 archivos</div>
+          </div>
+          <div class="table-wrap">
+            <table class="clean-table" id="files-manage-table">
+              <thead>
+                <tr>
+                  <th>Archivo en Disco</th>
+                  <th>Tipo Comprobante</th>
+                  <th>Serie - Folio</th>
+                  <th>Periodo / Emisión</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="files-manage-tbody">
+                <tr><td colspan="5" class="text-muted" style="text-align: center; padding: 1.5rem;">Cargando archivos...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
