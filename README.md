@@ -27,24 +27,41 @@ Abre en tu navegador: **http://localhost:8050**
 
 ## 🏠 Instalación en Home Assistant OS (Add-on con Ingress)
 
-Este repositorio está preparado para funcionar directamente como un **Add-on nativo con Ingress** en tu servidor Home Assistant OS:
+Cualquier usuario de Home Assistant OS / Supervised puede instalar este Add-on directamente desde su panel de Home Assistant:
 
-### Método 1: Como Add-on Local (Recomendado)
+### Opción A: Instalación en 1 Clic (My Home Assistant)
+
+Haz clic en el siguiente botón para agregar este repositorio a tu Home Assistant de forma automática:
+
+[![Abrir tu instancia de Home Assistant y mostrar el diálogo para añadir el repositorio de complementos.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FMoztoo%2Fcfe_analizer)
+
+---
+
+### Opción B: Instalación Manual desde la Tienda de Add-ons
+
+1. En tu Home Assistant, ve a **Ajustes** > **Complementos** > **Tienda de complementos**.
+2. Haz clic en el menú de **3 puntos** (arriba a la derecha) > **Repositorios**.
+3. Añade la URL de este repositorio:
+   ```text
+   https://github.com/Moztoo/cfe_analizer
+   ```
+4. Haz clic en **Añadir** y luego en **Cerrar**.
+5. Recarga la tienda de complementos; verás la categoría **CFE Analizer Add-ons** con el complemento **CFE Analizer**.
+6. Haz clic en **Instalar**.
+7. Una vez instalado, activa la opción **"Mostrar en la barra lateral"** y haz clic en **Iniciar**.
+8. En la pestaña **Configuración** puedes personalizar tu tarifa, titular y límite DAC.
+
+---
+
+### Opción C: Como Add-on Local (Desarrolladores)
 1. En tu servidor Home Assistant (vía SSH o recurso compartido Samba `\\homeassistant\addons`):
    ```bash
    cd /addons
-   git clone <URL_DE_ESTE_REPOSITORIO> cfe_analizer
+   git clone https://github.com/Moztoo/cfe_analizer.git cfe_analizer
    ```
-2. En la interfaz web de Home Assistant, ve a **Ajustes** > **Complementos** > **Tienda de complementos**.
-3. Haz clic en el menú de los 3 puntos (arriba a la derecha) > **Comprobar si hay actualizaciones**.
-4. En la sección **Local add-ons**, verás aparecer **CFE Analizer**.
-5. Haz clic en **Instalar**, activa la casilla **"Mostrar en la barra lateral"** y haz clic en **Iniciar**.
-6. En la pestaña **Configuración** del add-on puedes definir los metadatos de tu suministro (Tarifa, Titular, etc.) y la ruta persistente de facturas (por defecto `/share/cfe_analizer/input`).
-
-### Método 2: Como Repositorio de la Tienda de Add-ons
-1. En **Ajustes** > **Complementos** > **Tienda de complementos** > Menú 3 puntos > **Repositorios**.
-2. Añade la URL de este repositorio en GitHub.
-3. Instala e inicia el add-on.
+2. En **Ajustes** > **Complementos** > **Tienda de complementos** > Menú 3 puntos > **Comprobar si hay actualizaciones**.
+3. En la sección **Local add-ons**, verás aparecer **CFE Analizer**.
+4. Haz clic en **Instalar**, activa **"Mostrar en la barra lateral"** e inicia.
 
 ---
 
